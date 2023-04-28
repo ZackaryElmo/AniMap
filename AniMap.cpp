@@ -323,10 +323,11 @@ void AniTree::clear()
 }
 
 int main() {
-
+    bool errorOff = true;
+    bool error = false;
     bool run_once = true;
     ifstream aniLoader;
-    
+
 
     string csvLine;
 
@@ -347,24 +348,24 @@ int main() {
     vector<string> animeGenres;
 
     AniTree ani;
-    
+
 
     // create a font to be used later
     sf::Font font;
-        // Passes in the file name so that it can displayed correctly
-        if (!font.loadFromFile("Lato-Black.ttf")) {
-            return -1;
-        }
+    // Passes in the file name so that it can displayed correctly
+    if (!font.loadFromFile("Lato-Black.ttf")) {
+        return -1;
+    }
     RenderWindow window(VideoMode(1500, 900), "AniMap");
-    
-    
+
+
     // makes the bottons for BFS and BFS
     RectangleShape buttonRect(Vector2f(100, 50));
     buttonRect.setPosition(100, 550);
     buttonRect.setFillColor(Color::Blue);
     buttonRect.setOutlineThickness(2);
     buttonRect.setOutlineColor(Color::Black);
-    
+
     // makes DFS button
     RectangleShape buttonRect2(Vector2f(100, 50));
     buttonRect2.setPosition(250, 550);
@@ -375,6 +376,11 @@ int main() {
     // BFS button Text
     Text buttonText("BFS", font, 20);
     buttonText.setPosition(120, 560);
+
+    // Error message
+    Text errorMessage("The Anime you typed does not exist. Please try again!", font, 30);
+    errorMessage.setPosition(640, 700);
+    errorMessage.setFillColor(Color::Red);
 
     // DFS Button Text
     Text buttonText2("DFS", font, 20);
@@ -534,7 +540,7 @@ int main() {
     bool typing = false;
 
     // Define the dropdown list options
-    string options[] = { "Action", "Comedy", "Drama", "Romance", "Sci-Fi", "Mystery"};
+    string options[] = { "Action", "Comedy", "Drama", "Romance", "Sci-Fi", "Mystery" };
     int numOptions = 6;
 
     // Define the dropdown list rectangle
@@ -574,12 +580,12 @@ int main() {
                         if (optionText.getGlobalBounds().contains(mousePos.x, mousePos.y)) {
                             dropdownText.setString(options[i]);
                             dropdownOpen = false;
-                            
+
                             break;
                         }
                     }
                 }
-                else if(textBoxRect.getGlobalBounds().contains(mousePos.x, mousePos.y)) {
+                else if (textBoxRect.getGlobalBounds().contains(mousePos.x, mousePos.y)) {
                     typing = true;
                 }
                 else if (buttonRect.getGlobalBounds().contains(mousePos.x, mousePos.y)) {
@@ -600,7 +606,7 @@ int main() {
                         if (textString.size() > 0) {
                             textString.erase(textString.size() - 1);
                             textBoxText.setString(textString);
-                           
+
                         }
                     }
                     else {
@@ -671,11 +677,11 @@ int main() {
         window.draw(executionTime);
         window.draw(bannerLink);
         window.draw(coverLink);
-        
 
 
-        
-        
+
+
+
 
         // gets the textbox value
         std::string textBoxValue = textBoxText.getString();
@@ -684,17 +690,19 @@ int main() {
         // Get the dropdown menu value
         userChoice = dropdownText.getString();
         //std::cout << "Text Box Value: " << userChoice << std::endl;
-       
+
         // When BFS is clicked stuff 
 
         if (buttonClicked) {
-
+           
+            buttonClicked = false;
+            buttonClicked2 = false;
             aniLoader.open("ShinAniMap.csv");
             getline(aniLoader, csvLine);
             buttonText.setPosition(120, 560);
             while (getline(aniLoader, csvLine))
             {
-                
+
                 string currentColumn;
                 istringstream store(csvLine);
                 //A backslash is used instead of a comma due to issues with descriptions containing commas and getline. 
@@ -798,17 +806,24 @@ int main() {
                 cout << "Banner Image Link: " << bannerLinkPrint << endl;
                 cout << "Cover Image Link: " << coverLinkPrint << endl;
 
-
+                error = false;
                 ani.clear();
                 aniLoader.close();
             }
             else {
+                cout << "Error: Please type in anthor Anime" << endl;
+                error = true;
+                ani.clear();
+                aniLoader.close();
                 continue;
             }
-           
+
         }
-        
-        if(buttonClicked2){
+
+        if (buttonClicked2) {
+           
+            buttonClicked = false;
+            buttonClicked2 = false;
             aniLoader.open("ShinAniMap.csv");
             getline(aniLoader, csvLine);
             buttonText.setPosition(120, 560);
@@ -856,7 +871,7 @@ int main() {
 
                 getline(store, currentColumn, '\\');
                 animeGenres.push_back(currentColumn);
-                
+
                 ani.insert(userChoice, romanjiName, englishName, startDate, endDate, coverImage, bannerImage, airingFormat, airingString, episodeCount, startSeason, animeDescription, averageScore, animeGenres);
                 //Clears the genre vector at the end of insertion to save performance.
                 animeGenres.clear();
@@ -916,18 +931,25 @@ int main() {
                 bannerLinkPrint = output[5];
                 coverLinkPrint = output[4];
 
+                error = false;
                 cout << "Banner Image Link: " << bannerLinkPrint << endl;
                 cout << "Cover Image Link: " << coverLinkPrint << endl;
 
                 ani.clear();
+                aniLoader.close();
             }
             else {
+                cout << "Error: Please type in anthor Anime" << endl;
+                error = true;
+                ani.clear();
+                aniLoader.close();
                 continue;
             }
-            
-            
-        }
 
+
+        }
+        ani.clear();
+        aniLoader.close();
         std::string line = "";
 
         sf::FloatRect textRect = description_C.getLocalBounds();
@@ -937,7 +959,7 @@ int main() {
         float lineHeight = description_C.getCharacterSize() * 1.5f;
         float x = description_C.getPosition().x;
         float y = animeInfo.getPosition().y;
-        
+
 
         for (std::string::iterator it = str.begin(); it != str.end(); ++it) {
             line += *it;
@@ -957,7 +979,10 @@ int main() {
             description_C.setPosition(x, y + 470);
             window.draw(description_C);
         }
-
+        if (error) {
+            window.draw(errorMessage);
+        }
+        
         buttonClicked = false;
         buttonClicked2 = false;
         window.draw(genresC);
